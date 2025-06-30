@@ -856,19 +856,28 @@ namespace Flow.Launcher.Plugin.BitwardenSearch
                 throw new Exception("No valid session key available");
             }
 
+            Logger.Log($"Starting Bitwarden server with session key length: {_settings.SessionKey.Length}", LogLevel.Debug);
+
             Logger.Log("Starting Bitwarden server", LogLevel.Info);
             _serveProcess = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "bw",
-                    Arguments = $"serve --session \"{_settings.SessionKey}\"", // Added quotes around session key
+                    Arguments = "serve",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true
                 }
             };
+
+            // Set BW_SESSION environment variable for the serve process
+            _serveProcess.StartInfo.EnvironmentVariables["BW_SESSION"] = _settings.SessionKey;
+            
+            // Also ensure the current process has the environment variable
+            Environment.SetEnvironmentVariable("BW_SESSION", _settings.SessionKey, EnvironmentVariableTarget.Process);
+            Logger.Log("BW_SESSION environment variable set for serve process and current process", LogLevel.Debug);
 
             _serveProcess.OutputDataReceived += (sender, e) => 
             {
